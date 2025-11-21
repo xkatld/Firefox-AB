@@ -1,0 +1,19 @@
+# dependencies
+node_modules/
+
+# build
+dist/
+
+# runtime data
+data/
+profiles/
+profiles/_frozen/
+
+# logs & env
+*.log
+.env*
+
+# editor
+.DS_Store
+.vscode/
+.idea/
