@@ -25,3 +25,6 @@ plugins/_locales/
 plugins/src/
 plugins/settings/
 plugins/presets/
+
+# 浏览器文件 - 排除大文件
+browsers/
