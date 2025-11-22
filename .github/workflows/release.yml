@@ -2,34 +2,11 @@ name: Build and Release
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'Release version (e.g. 1.0.1)'
-        required: false
-        default: ''
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     timeout-minutes: 60
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            platform: linux
-            build_cmd: npm run build:linux
-            upload_files: |
-              dist/Browser Manager-*.AppImage
-              dist/browser-manager-*.zip
-            artifact_name: linux-builds
-
-          - os: windows-latest
-            platform: windows
-            build_cmd: npm run build:win
-            upload_files: |
-              dist/Browser Manager Setup*.exe
-              dist/Browser Manager-portable.exe
-            artifact_name: windows-builds
 
     steps:
       - uses: actions/checkout@v4
@@ -39,101 +16,21 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Check disk space
-        run: df -h
-
       - name: Install dependencies
-        run: npm install --verbose
+        run: npm install
 
-      - name: Clean previous builds
-        run: rm -rf dist
-
-      - name: Build application
+      - name: Build all platforms
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
-          DEBUG: electron-builder
-        run: |
-          echo "Starting build for ${{ matrix.platform }}"
-          ${{ matrix.build_cmd }}
-          echo "Build completed successfully"
-
-      - name: Check disk space after build
-        run: df -h
+        run: npm run build:all
 
       - name: List build outputs
-        run: |
-          echo "=== Build outputs in dist/ ==="
-          ls -lah dist/ 2>/dev/null || echo "dist/ directory not found"
-          echo ""
-          echo "=== Total size ==="
-          du -sh dist/ 2>/dev/null || echo "Cannot calculate size"
-
-      - name: Upload artifacts
-        id: upload
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.artifact_name }}
-          path: ${{ matrix.upload_files }}
-          retention-days: 1
-          if-no-files-found: error
-
-      - name: Verify upload
-        run: |
-          echo "Artifacts uploaded successfully"
-          echo "Artifact name: ${{ matrix.artifact_name }}"
-          echo "Upload ID: ${{ steps.upload.outputs.artifact-id }}"
-
-      - name: Collect logs on failure
-        if: failure()
-        run: |
-          echo "=== Build failed, collecting diagnostics ==="
-          echo ""
-          echo "=== Disk space ==="
-          df -h
-          echo ""
-          echo "=== Memory usage ==="
-          free -h || echo "Cannot check memory"
-          echo ""
-          echo "=== Process list ==="
-          ps aux | grep -E 'electron|node' || echo "No electron/node processes found"
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download Linux builds
-        id: download-linux
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-builds
-          path: ./release-files
-        continue-on-error: true
-
-      - name: Download Windows builds
-        id: download-windows
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-builds
-          path: ./release-files
-        continue-on-error: true
-
-      - name: Verify downloads
-        run: |
-          echo "=== Linux builds download status: ${{ steps.download-linux.outcome }} ==="
-          echo "=== Windows builds download status: ${{ steps.download-windows.outcome }} ==="
-          echo ""
-          echo "=== Files to be released ==="
-          ls -lah ./release-files/ 2>/dev/null || echo "No files found"
+        run: ls -lh dist/
 
       - name: Create Release
-        id: create_release
-        if: hashFiles('release-files/*') != ''
         uses: softprops/action-gh-release@v1
         with:
-          files: release-files/*
+          files: dist/*
           tag_name: v${{ github.run_number }}
           name: Release ${{ github.run_number }}
           draft: false
@@ -144,31 +41,23 @@ jobs:
             ## Downloads
 
             ### Windows
-            - **Browser Manager Setup-X.X.X.exe**: Windows NSIS installer (recommended)
-            - **Browser Manager-portable.exe**: Portable executable (no installation required)
+            - `Browser Manager Setup-*.exe` - NSIS 安装程序（推荐）
+            - `Browser Manager-portable.exe` - 便携版 exe
 
             ### Linux
-            - **Browser Manager-X.X.X.AppImage**: Standalone executable for Linux (recommended)
-            - **browser-manager-X.X.X.zip**: Linux compressed package
+            - `Browser Manager-*.AppImage` - AppImage 格式（推荐）
+            - `browser-manager-*.zip` - ZIP 压缩包
 
             ## Installation
 
-            See [WINDOWS_SETUP.md](https://github.com/${{ github.repository }}/blob/main/WINDOWS_SETUP.md) for Windows installation guide.
+            **Windows**: 下载 Setup exe 文件运行安装，或解压 portable exe 直接使用
 
-            For Linux, download the AppImage file and run:
+            **Linux**: 
             ```bash
             chmod +x "Browser Manager-*.AppImage"
             ./Browser\ Manager-*.AppImage
             ```
 
-            ## Changelog
-
-            - Fixed electron-builder configuration
-            - Added Windows build support
-            - Improved CLI and GUI functionality
+            详见 [WINDOWS_SETUP.md](https://github.com/${{ github.repository }}/blob/main/WINDOWS_SETUP.md)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Print Release URL
-        run: |
-          echo "Release created at: ${{ steps.create_release.outputs.url }}"
