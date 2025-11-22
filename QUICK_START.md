@@ -27,6 +27,29 @@
 
 ## 本地开发
 
+### 前置要求
+- Node.js 24+ （[安装说明](#安装-nodejs)）
+- npm 11+
+
+### 安装 Node.js
+
+如果未安装 Node.js 24+，使用 nvm 安装：
+
+```bash
+# 下载并安装 nvm
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+
+# 重新加载 shell 配置
+. "$HOME/.nvm/nvm.sh"
+
+# 安装 Node.js 24
+nvm install 24
+
+# 验证版本
+node -v  # 应该显示 v24.11.1 或更高
+npm -v   # 应该显示 11.6.2 或更高
+```
+
 ### 安装依赖
 ```bash
 npm install

@@ -5,6 +5,10 @@
   "author": "Browser Manager",
   "type": "module",
   "main": "src/gui/main.js",
+  "engines": {
+    "node": ">=24.0.0",
+    "npm": ">=11.0.0"
+  },
   "scripts": {
     "start": "electron ./src/gui/main.js",
     "cli": "node ./src/cli.js",
@@ -19,8 +23,8 @@
     "commander": "^11.0.0"
   },
   "devDependencies": {
-    "electron": "^28.0.0",
-    "electron-builder": "^24.9.1"
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
   },
   "build": {
     "appId": "com.browsermanager.app",
