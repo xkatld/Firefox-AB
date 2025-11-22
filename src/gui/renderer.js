@@ -11,7 +11,7 @@ async function loadProfiles() {
     }
     renderProfiles();
   } catch (error) {
-    showMessage(`Failed to load profiles: ${error.message}`, 'error');
+    showMessage(`加载配置失败: ${error.message}`, 'error');
     profiles = [];
     renderProfiles();
   }
@@ -22,7 +22,7 @@ async function createNewProfile() {
   const name = input.value.trim();
 
   if (!name) {
-    showMessage('Please enter a profile name', 'error');
+    showMessage('请输入配置名称', 'error');
     return;
   }
 
@@ -31,17 +31,17 @@ async function createNewProfile() {
     if (result.error) {
       showMessage(result.error, 'error');
     } else {
-      showMessage(`Profile "${name}" created successfully`, 'success');
+      showMessage(`配置 "${name}" 创建成功`, 'success');
       input.value = '';
       await loadProfiles();
     }
   } catch (error) {
-    showMessage(`Failed to create profile: ${error.message}`, 'error');
+    showMessage(`创建配置失败: ${error.message}`, 'error');
   }
 }
 
 async function deleteProfile(name) {
-  if (!confirm(`Are you sure you want to delete "${name}"?`)) {
+  if (!confirm(`确定要删除配置 "${name}" 吗？`)) {
     return;
   }
 
@@ -50,36 +50,36 @@ async function deleteProfile(name) {
     if (result.error) {
       showMessage(result.error, 'error');
     } else {
-      showMessage(`Profile "${name}" deleted successfully`, 'success');
+      showMessage(`配置 "${name}" 删除成功`, 'success');
       await loadProfiles();
     }
   } catch (error) {
-    showMessage(`Failed to delete profile: ${error.message}`, 'error');
+    showMessage(`删除配置失败: ${error.message}`, 'error');
   }
 }
 
 async function openProfile(name) {
   const button = event.target;
   button.disabled = true;
-  button.textContent = 'Opening...';
+  button.textContent = '打开中...';
 
   try {
     const result = await window.api.openProfile(name);
     if (result.error) {
       showMessage(result.error, 'error');
       button.disabled = false;
-      button.textContent = 'Open';
+      button.textContent = '打开';
     } else {
-      showMessage(`Profile "${name}" opened successfully`, 'success');
+      showMessage(`配置 "${name}" 打开成功`, 'success');
       setTimeout(() => {
         button.disabled = false;
-        button.textContent = 'Open';
+        button.textContent = '打开';
       }, 2000);
     }
   } catch (error) {
-    showMessage(`Failed to open profile: ${error.message}`, 'error');
+    showMessage(`打开配置失败: ${error.message}`, 'error');
     button.disabled = false;
-    button.textContent = 'Open';
+    button.textContent = '打开';
   }
 }
 
@@ -87,7 +87,7 @@ function renderProfiles() {
   const container = document.getElementById('profilesList');
   
   if (profiles.length === 0) {
-    container.innerHTML = '<div class="empty-state"><p>No profiles yet. Create one to get started!</p></div>';
+    container.innerHTML = '<div class="empty-state"><p>暂无配置，创建一个开始使用吧</p></div>';
     return;
   }
 
@@ -95,8 +95,8 @@ function renderProfiles() {
     <div class="profile-card">
       <div class="profile-name">${escapeHtml(profile.name)}</div>
       <div class="profile-actions">
-        <button class="btn-secondary" onclick="openProfile('${escapeHtml(profile.name)}')">Open</button>
-        <button class="btn-danger" onclick="deleteProfile('${escapeHtml(profile.name)}')">Delete</button>
+        <button class="btn-secondary" onclick="openProfile('${escapeHtml(profile.name)}')">打开</button>
+        <button class="btn-danger" onclick="deleteProfile('${escapeHtml(profile.name)}')">删除</button>
       </div>
     </div>
   `).join('');
