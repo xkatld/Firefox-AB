@@ -17,3 +17,11 @@ jspm_packages/
 .npm
 .env
 .env.local
+
+# 指纹识别插件 - 本地打包用
+plugins/my-fingerprint-firefox.xpi
+plugins/assets/
+plugins/_locales/
+plugins/src/
+plugins/settings/
+plugins/presets/
