@@ -50,13 +50,12 @@ node -v  # 应该显示 v24.11.1 或更高
 npm -v   # 应该显示 11.6.2 或更高
 ```
 
-### 安装依赖（包括浏览器）
+### 安装依赖
 ```bash
 npm install
 ```
 
-**重要**: `npm install` 会自动运行 postinstall 脚本，下载 Chromium 和 Firefox 浏览器（约 300MB）。  
-浏览器将缓存到 `~/.cache/ms-playwright/`，首次会花 2-5 分钟。
+**注意**: 浏览器已经内置在应用中，无需网络下载。
 
 ### 运行 GUI
 ```bash

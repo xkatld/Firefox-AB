@@ -2,8 +2,13 @@ import { chromium, firefox } from 'playwright';
 import { promises as fs } from 'fs';
 import path from 'path';
 
+// 使用应用内置的浏览器
+const browsersPath = path.join(process.cwd(), 'browsers');
+process.env.PLAYWRIGHT_BROWSERS_PATH = browsersPath;
+
 const PLUGINS_DIR = path.join(process.cwd(), 'plugins');
 
+console.log('浏览器目录:', browsersPath);
 console.log('插件目录:', PLUGINS_DIR);
 
 async function getExtensionPaths() {
