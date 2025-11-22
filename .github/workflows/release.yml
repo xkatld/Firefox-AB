@@ -11,6 +11,7 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       matrix:
         include:
@@ -38,8 +39,11 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Check disk space
+        run: df -h
+
       - name: Install dependencies
-        run: npm install
+        run: npm install --verbose
 
       - name: Clean previous builds
         run: rm -rf dist
@@ -47,10 +51,22 @@ jobs:
       - name: Build application
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
-        run: ${{ matrix.build_cmd }}
+          DEBUG: electron-builder
+        run: |
+          echo "Starting build for ${{ matrix.platform }}"
+          ${{ matrix.build_cmd }}
+          echo "Build completed successfully"
+
+      - name: Check disk space after build
+        run: df -h
 
       - name: List build outputs
-        run: ls -lh dist/
+        run: |
+          echo "=== Build outputs in dist/ ==="
+          ls -lah dist/ 2>/dev/null || echo "dist/ directory not found"
+          echo ""
+          echo "=== Total size ==="
+          du -sh dist/ 2>/dev/null || echo "Cannot calculate size"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -59,9 +75,25 @@ jobs:
           path: ${{ matrix.upload_files }}
           retention-days: 1
 
+      - name: Collect logs on failure
+        if: failure()
+        run: |
+          echo "=== Build failed, collecting diagnostics ==="
+          echo ""
+          echo "=== Disk space ==="
+          df -h
+          echo ""
+          echo "=== Memory usage ==="
+          free -h || echo "Cannot check memory"
+          echo ""
+          echo "=== Process list ==="
+          ps aux | grep -E 'electron|node' || echo "No electron/node processes found"
+
   release:
     needs: build
     runs-on: ubuntu-latest
+    if: success()
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
