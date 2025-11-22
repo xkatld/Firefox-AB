@@ -27,10 +27,25 @@ jobs:
       - name: List build outputs
         run: ls -lh dist/
 
+      - name: Package Windows executable
+        run: |
+          cd dist
+          zip -r Browser-Manager-Windows-v1.0.0.zip win-unpacked/
+          ls -lh Browser-Manager-Windows-v1.0.0.zip
+          cd ..
+
+      - name: Prepare release files
+        run: |
+          mkdir -p release-files
+          cp dist/Browser\ Manager-*.AppImage release-files/ 2>/dev/null || true
+          cp dist/browser-manager-*.zip release-files/ 2>/dev/null || true
+          cp dist/Browser-Manager-Windows-v1.0.0.zip release-files/ 2>/dev/null || true
+          ls -lh release-files/
+
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: dist/*
+          files: release-files/*
           tag_name: v${{ github.run_number }}
           name: Release ${{ github.run_number }}
           draft: false
@@ -41,23 +56,24 @@ jobs:
             ## Downloads
 
             ### Windows
-            - `Browser Manager Setup-*.exe` - NSIS 安装程序（推荐）
-            - `Browser Manager-portable.exe` - 便携版 exe
+            - `Browser-Manager-Windows-v1.0.0.zip` - 完整版（包含所有依赖）
 
             ### Linux
-            - `Browser Manager-*.AppImage` - AppImage 格式（推荐）
-            - `browser-manager-*.zip` - ZIP 压缩包
+            - `Browser Manager-1.0.0.AppImage` - AppImage 格式（推荐）
+            - `browser-manager-1.0.0.zip` - ZIP 压缩包
 
             ## Installation
 
-            **Windows**: 下载 Setup exe 文件运行安装，或解压 portable exe 直接使用
+            **Windows**: 
+            ```
+            1. 解压 Browser-Manager-Windows-v1.0.0.zip
+            2. 运行 Browser Manager.exe
+            ```
 
             **Linux**: 
             ```bash
-            chmod +x "Browser Manager-*.AppImage"
-            ./Browser\ Manager-*.AppImage
+            chmod +x "Browser Manager-1.0.0.AppImage"
+            ./Browser\ Manager-1.0.0.AppImage
             ```
-
-            详见 [WINDOWS_SETUP.md](https://github.com/${{ github.repository }}/blob/main/WINDOWS_SETUP.md)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
