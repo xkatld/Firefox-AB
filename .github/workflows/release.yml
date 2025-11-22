@@ -16,17 +16,18 @@ jobs:
         include:
           - os: ubuntu-latest
             platform: linux
-            build_cmd: npm run build
+            build_cmd: npm run build:linux
             upload_files: |
               dist/Browser Manager-*.AppImage
               dist/browser-manager-*.zip
             artifact_name: linux-builds
 
-          - os: ubuntu-latest
+          - os: windows-latest
             platform: windows
             build_cmd: npm run build:win
             upload_files: |
-              dist/Browser-Manager-Windows.zip
+              dist/Browser Manager Setup*.exe
+              dist/Browser Manager-portable.exe
             artifact_name: windows-builds
 
     steps:
@@ -36,12 +37,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-
-      - name: Install system dependencies (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wine wine-binfmt
 
       - name: Install dependencies
         run: npm install
@@ -97,13 +92,12 @@ jobs:
             ## Downloads
 
             ### Windows
-            - **Browser Manager Setup**: Windows NSIS installer
+            - **Browser Manager Setup-X.X.X.exe**: Windows NSIS installer (recommended)
             - **Browser Manager-portable.exe**: Portable executable (no installation required)
-            - **Browser-Manager-Windows.zip**: All dependencies included
 
             ### Linux
-            - **Browser Manager AppImage**: Standalone executable for Linux
-            - **browser-manager.zip**: Linux package
+            - **Browser Manager-X.X.X.AppImage**: Standalone executable for Linux (recommended)
+            - **browser-manager-X.X.X.zip**: Linux compressed package
 
             ## Installation
 

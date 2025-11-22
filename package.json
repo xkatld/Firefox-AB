@@ -41,7 +41,9 @@
         },
         "portable"
       ],
-      "sign": "./customSign.js"
+      "certificateFile": null,
+      "certificatePassword": null,
+      "signingHashAlgorithms": []
     },
     "linux": {
       "target": [
