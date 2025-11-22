@@ -1,0 +1,48 @@
+{
+  "name": "browser-manager",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "src/gui/main.js",
+  "scripts": {
+    "start": "electron ./src/gui/main.js",
+    "cli": "node ./src/cli.js",
+    "dev": "electron ./src/gui/main.js --dev",
+    "build": "electron-builder -w"
+  },
+  "dependencies": {
+    "playwright": "^1.45.0",
+    "commander": "^11.0.0",
+    "electron": "^28.0.0"
+  },
+  "devDependencies": {
+    "electron-builder": "^24.9.1"
+  },
+  "build": {
+    "appId": "com.browsermanager.app",
+    "productName": "Browser Manager",
+    "files": [
+      "src/**/*",
+      "profiles/**/*",
+      "plugins/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "certificateFile": null,
+      "certificatePassword": null
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}
