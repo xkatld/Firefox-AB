@@ -19,36 +19,30 @@
 2. 进入 **Actions** 选项卡
 3. 点击左侧的 **Build and Release** 工作流
 4. 点击 **Run workflow** 按钮
-5. 可以选择输入版本号（可选），或者留空使用自动版本
-6. 点击 **Run workflow** 开始编译
+5. 点击 **Run workflow** 开始编译
 
 ### 自动编译过程
 
-工作流会并行执行以下步骤：
+工作流在单个 Ubuntu 环境中执行以下步骤：
 
-#### 在 Ubuntu 上编译 Linux 版本：
-- 编译 AppImage（Linux 直接运行格式）
-- 编译 ZIP 分发包（Linux）
-- 时间：5-7 分钟
+1. **npm install** - 安装依赖
+   - 时间：2-3 分钟
 
-#### 在 Windows 上编译 Windows 版本：
-- 使用 native electron-builder 编译
-- 生成 NSIS 安装程序（exe）
-- 生成便携版可执行文件
-- 时间：8-10 分钟
+2. **npm run build:all** - 编译所有平台
+   - Linux：AppImage + ZIP
+   - Windows：NSIS + Portable exe（使用 Wine 交叉编译）
+   - 时间：12-15 分钟
 
-#### 发布阶段：
-- 等待两个平台编译完成
-- 创建 GitHub Release
-- 上传编译文件
-- 时间：1-2 分钟
+3. **创建 Release** - 上传编译文件到 GitHub
+   - 时间：1-2 分钟
+
+总耗时：约 15-20 分钟
 
 ### 查看编译进度
 
 1. 在 Actions 页面可以看到正在运行的工作流
-2. 两个编译任务会并行执行（ubuntu 和 windows）
-3. 点击可以查看每个平台的详细编译日志
-4. 编译过程通常需要 10-15 分钟
+2. 点击 **Build and Release** run 查看日志
+3. 展开各个步骤查看详细输出
 
 ### 发布完成
 
@@ -61,23 +55,27 @@
 
 1. 进入项目主页
 2. 点击右侧的 **Releases**
-3. 找到最新的 Release
+3. 找到最新的 Release（标记为 v数字）
 4. 下载需要的文件：
-   - **Windows**: `Browser Manager Setup-X.X.X.exe`（推荐）或 `Browser Manager-portable.exe`
-   - **Linux**: `Browser Manager-X.X.X.AppImage`（推荐）或 `browser-manager-X.X.X.zip`
 
-## 工作流文件
+**Windows**:
+- `Browser Manager Setup-*.exe` - NSIS 安装程序（推荐，自动安装）
+- `Browser Manager-portable.exe` - 便携版 exe（解压即用）
+
+**Linux**:
+- `Browser Manager-*.AppImage` - AppImage 格式（推荐，权限 +x 后直接运行）
+- `browser-manager-*.zip` - ZIP 压缩包
+
+## 工作流说明
 
 工作流配置文件位于：`.github/workflows/release.yml`
 
-配置的任务：
-- **build**: 编译任务（Linux 和 Windows 版本）
-- **release**: 创建 GitHub Release 并上传文件
+执行步骤：
+1. **npm install** - 安装所有依赖
+2. **npm run build:all** - 编译 Linux 和 Windows 版本
+3. **创建 Release** - 自动上传编译文件到 GitHub Releases
 
-## 环境变量
-
-工作流会自动设置：
-- `CSC_IDENTITY_AUTO_DISCOVERY=false` - 禁用代码签名（用于无签名构建）
+所有过程在单个 ubuntu-latest 环境中进行，简单且可靠。
 
 ## 故障排查
 

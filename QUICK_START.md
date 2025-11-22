@@ -11,12 +11,17 @@
 2. 进入 **Actions** 标签
 3. 点击左侧 **Build and Release**
 4. 点击 **Run workflow** 按钮
-5. 等待编译完成（约 10-15 分钟）
+5. 等待编译完成（约 15-20 分钟）
 6. 自动发布到 **Releases** 页面
 
 ### 下载编译结果
-- Windows: `Browser-Manager-Windows.zip`
-- Linux: `Browser Manager-1.0.0.AppImage`
+**Windows**:
+- `Browser Manager Setup-*.exe` - NSIS 安装程序
+- `Browser Manager-portable.exe` - 便携版 exe
+
+**Linux**:
+- `Browser Manager-*.AppImage` - AppImage 格式（推荐）
+- `browser-manager-*.zip` - ZIP 压缩包
 
 ---
 
