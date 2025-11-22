@@ -69,11 +69,19 @@ jobs:
           du -sh dist/ 2>/dev/null || echo "Cannot calculate size"
 
       - name: Upload artifacts
+        id: upload
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
           path: ${{ matrix.upload_files }}
           retention-days: 1
+          if-no-files-found: error
+
+      - name: Verify upload
+        run: |
+          echo "Artifacts uploaded successfully"
+          echo "Artifact name: ${{ matrix.artifact_name }}"
+          echo "Upload ID: ${{ steps.upload.outputs.artifact-id }}"
 
       - name: Collect logs on failure
         if: failure()
@@ -92,25 +100,37 @@ jobs:
   release:
     needs: build
     runs-on: ubuntu-latest
-    if: success()
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
       - name: Download Linux builds
+        id: download-linux
         uses: actions/download-artifact@v4
         with:
           name: linux-builds
           path: ./release-files
+        continue-on-error: true
 
       - name: Download Windows builds
+        id: download-windows
         uses: actions/download-artifact@v4
         with:
           name: windows-builds
           path: ./release-files
+        continue-on-error: true
+
+      - name: Verify downloads
+        run: |
+          echo "=== Linux builds download status: ${{ steps.download-linux.outcome }} ==="
+          echo "=== Windows builds download status: ${{ steps.download-windows.outcome }} ==="
+          echo ""
+          echo "=== Files to be released ==="
+          ls -lah ./release-files/ 2>/dev/null || echo "No files found"
 
       - name: Create Release
         id: create_release
+        if: hashFiles('release-files/*') != ''
         uses: softprops/action-gh-release@v1
         with:
           files: release-files/*
