@@ -1,11 +1,64 @@
-import { chromium, firefox } from 'playwright';
+import { chromium, firefox, _electron } from 'playwright';
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
+import { execSync } from 'child_process';
 
 const PLUGINS_DIR = path.join(os.homedir(), '.browser-manager', 'plugins');
 
 console.log('插件目录:', PLUGINS_DIR);
+
+let browserInstallPromise = null;
+
+async function ensureBrowsersInstalled() {
+  if (browserInstallPromise) {
+    return browserInstallPromise;
+  }
+
+  browserInstallPromise = (async () => {
+    try {
+      // 检查浏览器是否存在
+      const chromiumPath = chromium.executablePath();
+      const firefoxPath = firefox.executablePath();
+      
+      let needsInstall = false;
+      try {
+        await fs.stat(chromiumPath);
+        console.log('✓ Chromium 已存在');
+      } catch {
+        console.log('⚠ Chromium 未安装');
+        needsInstall = true;
+      }
+
+      try {
+        await fs.stat(firefoxPath);
+        console.log('✓ Firefox 已存在');
+      } catch {
+        console.log('⚠ Firefox 未安装');
+        needsInstall = true;
+      }
+
+      if (needsInstall) {
+        console.log('正在下载浏览器，请稍候...');
+        try {
+          execSync('npx playwright install chromium firefox', {
+            stdio: 'inherit',
+            timeout: 600000, // 10分钟超时
+          });
+          console.log('✓ 浏览器下载完成');
+        } catch (error) {
+          console.error('浏览器下载失败:', error.message);
+          throw new Error('浏览器下载失败，请检查网络连接并重试');
+        }
+      }
+    } catch (error) {
+      console.error('浏览器检查失败:', error.message);
+      throw error;
+    }
+  })();
+
+  return browserInstallPromise;
+}
 
 async function getExtensionPaths() {
   try {
@@ -42,6 +95,14 @@ export async function launchBrowser(profilePath, browserType = 'chromium') {
   }
 
   console.log(`启动浏览器: ${browserType}, 配置路径: ${profilePath}`);
+
+  // 首次使用时确保浏览器已安装
+  try {
+    await ensureBrowsersInstalled();
+  } catch (error) {
+    console.error('浏览器安装检查失败:', error.message);
+    throw error;
+  }
 
   try {
     await fs.mkdir(profilePath, { recursive: true });
