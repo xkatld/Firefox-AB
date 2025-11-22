@@ -1,9 +1,10 @@
 import { promises as fs } from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import os from 'os';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PROFILES_DIR = path.join(__dirname, '..', 'profiles');
+const PROFILES_DIR = path.join(os.homedir(), '.browser-manager', 'profiles');
+
+console.log('配置目录:', PROFILES_DIR);
 
 export async function createProfile(name, browserType = 'chromium') {
   if (!name || name.trim() === '') {
@@ -28,11 +29,13 @@ export async function createProfile(name, browserType = 'chromium') {
     };
     await fs.writeFile(metaPath, JSON.stringify(meta, null, 2));
     
+    console.log(`✓ 配置 "${name}" 创建成功`);
     return profilePath;
   } catch (error) {
     if (error.code === 'EEXIST') {
       throw new Error(`配置 "${name}" 已存在`);
     }
+    console.error(`创建配置失败:`, error.message);
     throw error;
   }
 }
@@ -65,26 +68,30 @@ export async function listProfiles() {
       }
     }
     
+    console.log(`✓ 已加载 ${profiles.length} 个配置`);
     return profiles.sort((a, b) => a.name.localeCompare(b.name));
   } catch (error) {
     if (error.code === 'ENOENT') {
       return [];
     }
+    console.error('加载配置失败:', error.message);
     throw error;
   }
 }
 
 export async function removeProfile(name) {
   if (!name || name.trim() === '') {
-    throw new Error('Profile name cannot be empty');
+    throw new Error('配置名称不能为空');
   }
 
   const profilePath = path.join(PROFILES_DIR, name);
   
   try {
     await fs.rm(profilePath, { recursive: true, force: true });
+    console.log(`✓ 配置 "${name}" 删除成功`);
   } catch (error) {
-    throw new Error(`Failed to delete profile "${name}": ${error.message}`);
+    console.error(`删除配置失败:`, error.message);
+    throw new Error(`删除配置 "${name}" 失败: ${error.message}`);
   }
 }
 
