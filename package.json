@@ -16,8 +16,7 @@
     "build": "CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder",
     "build:win": "electron-builder -w --publish=never",
     "build:linux": "CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder -l",
-    "build:all": "electron-builder -w -l --publish=never",
-    "postinstall": "npx playwright install chromium firefox"
+    "build:all": "electron-builder -w -l --publish=never"
   },
   "dependencies": {
     "playwright": "^1.45.0",

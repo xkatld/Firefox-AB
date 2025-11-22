@@ -1,83 +1,34 @@
-import { chromium, firefox, _electron } from 'playwright';
+import { chromium, firefox } from 'playwright';
 import { promises as fs } from 'fs';
 import path from 'path';
-import os from 'os';
-import { execSync } from 'child_process';
 
-const PLUGINS_DIR = path.join(os.homedir(), '.browser-manager', 'plugins');
+const PLUGINS_DIR = path.join(process.cwd(), 'plugins');
 
 console.log('插件目录:', PLUGINS_DIR);
-
-let browserInstallPromise = null;
-
-async function ensureBrowsersInstalled() {
-  if (browserInstallPromise) {
-    return browserInstallPromise;
-  }
-
-  browserInstallPromise = (async () => {
-    try {
-      // 检查浏览器是否存在
-      const chromiumPath = chromium.executablePath();
-      const firefoxPath = firefox.executablePath();
-      
-      let needsInstall = false;
-      try {
-        await fs.stat(chromiumPath);
-        console.log('✓ Chromium 已存在');
-      } catch {
-        console.log('⚠ Chromium 未安装');
-        needsInstall = true;
-      }
-
-      try {
-        await fs.stat(firefoxPath);
-        console.log('✓ Firefox 已存在');
-      } catch {
-        console.log('⚠ Firefox 未安装');
-        needsInstall = true;
-      }
-
-      if (needsInstall) {
-        console.log('正在下载浏览器，请稍候...');
-        try {
-          execSync('npx playwright install chromium firefox', {
-            stdio: 'inherit',
-            timeout: 600000, // 10分钟超时
-          });
-          console.log('✓ 浏览器下载完成');
-        } catch (error) {
-          console.error('浏览器下载失败:', error.message);
-          throw new Error('浏览器下载失败，请检查网络连接并重试');
-        }
-      }
-    } catch (error) {
-      console.error('浏览器检查失败:', error.message);
-      throw error;
-    }
-  })();
-
-  return browserInstallPromise;
-}
 
 async function getExtensionPaths() {
   try {
     const entries = await fs.readdir(PLUGINS_DIR, { withFileTypes: true });
     const extensions = [];
     
+    // 加载 Chrome 插件（只要目录中有 manifest.json 就是有效的扩展）
     for (const entry of entries) {
       if (entry.isDirectory()) {
-        extensions.push(path.join(PLUGINS_DIR, entry.name));
+        const manifestPath = path.join(PLUGINS_DIR, entry.name, 'manifest.json');
+        try {
+          await fs.stat(manifestPath);
+          extensions.push(path.join(PLUGINS_DIR, entry.name));
+          console.log(`✓ 已加载 Chrome 扩展: ${entry.name}`);
+        } catch {
+          // 不是有效的扩展目录，跳过
+        }
       }
     }
     
-    if (extensions.length > 0) {
-      console.log(`✓ 已加载 ${extensions.length} 个扩展`);
-    }
     return extensions;
   } catch (error) {
     if (error.code === 'ENOENT') {
-      console.log('⚠ 插件目录不存在，跳过加载扩展');
+      console.log('⚠ 插件目录不存在');
       return [];
     }
     console.error('获取扩展失败:', error.message);
@@ -96,14 +47,6 @@ export async function launchBrowser(profilePath, browserType = 'chromium') {
 
   console.log(`启动浏览器: ${browserType}, 配置路径: ${profilePath}`);
 
-  // 首次使用时确保浏览器已安装
-  try {
-    await ensureBrowsersInstalled();
-  } catch (error) {
-    console.error('浏览器安装检查失败:', error.message);
-    throw error;
-  }
-
   try {
     await fs.mkdir(profilePath, { recursive: true });
     console.log(`✓ 配置目录已就绪: ${profilePath}`);
@@ -119,6 +62,25 @@ export async function launchBrowser(profilePath, browserType = 'chromium') {
     '-disable-extensions-except=' + extensions.join(','),
     '--load-extension=' + extensions.join(',')
   ].filter(arg => !arg.includes('=,') && !arg.includes(',-'));
+
+  // 处理 Firefox 扩展：复制 xpi 文件到 Firefox 扩展目录
+  if (browserType === 'firefox') {
+    const firefoxExtDir = path.join(profilePath, 'extensions');
+    try {
+      await fs.mkdir(firefoxExtDir, { recursive: true });
+      const xpiPath = path.join(PLUGINS_DIR, 'my-fingerprint-firefox.xpi');
+      const targetXpi = path.join(firefoxExtDir, 'my-fingerprint@browser.xpi');
+      try {
+        await fs.stat(xpiPath);
+        await fs.copyFile(xpiPath, targetXpi);
+        console.log('✓ Firefox 扩展已安装');
+      } catch {
+        console.log('⚠ Firefox 扩展文件未找到');
+      }
+    } catch (error) {
+      console.error('处理 Firefox 扩展失败:', error.message);
+    }
+  }
 
   let context;
   try {
