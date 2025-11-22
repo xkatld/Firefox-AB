@@ -7,42 +7,42 @@
 │  手动触发：点击 "Run workflow" 按钮                      │
 └──────────────────┬──────────────────────────────────────┘
                    │
-        ┌──────────▼──────────┐
-        │  Build Job (matrix) │
-        └──────────┬──────────┘
-                   │
-        ┌──────────┴──────────────┬──────────────┐
-        │                         │              │
-   ┌────▼────┐            ┌──────▼────┐   ┌────▼────┐
-   │          │            │           │   │          │
-   │          │            │           │   │          │
-   │Ubuntu    │            │Ubuntu     │   │Ubuntu    │
-   │Linux     │            │Windows    │   │...       │
-   │Build     │            │Build      │   │(future)  │
-   │          │            │           │   │          │
-   └────┬─────┘            └──────┬────┘   └────┬─────┘
-        │                         │             │
-    Uploads                   Uploads       Uploads
-    Artifacts                 Artifacts     Artifacts
-        │                         │             │
-        └──────────┬──────────────┴─────────────┘
-                   │
-        ┌──────────▼──────────────┐
-        │  Release Job            │
-        │  (等待所有 builds 完成)  │
-        └──────────┬──────────────┘
-                   │
-        ┌──────────▼──────────────┐
-        │ 下载所有 artifacts      │
-        │ 创建 GitHub Release     │
-        │ 上传编译文件到 Release  │
-        │ 添加发布说明           │
-        └──────────┬──────────────┘
-                   │
-        ┌──────────▼──────────────┐
-        │ 完成！                  │
-        │ 用户可下载发布版本      │
-        └────────────────────────┘
+        ┌──────────▼──────────────────────┐
+        │  Build Job (matrix - 并行)      │
+        └──────────┬─────────────┬────────┘
+                   │             │
+          ┌────────▼──┐    ┌────▼────────┐
+          │            │    │             │
+          │Ubuntu      │    │Windows      │
+          │Linux       │    │Build        │
+          │AppImage    │    │NSIS exe     │
+          │ZIP         │    │Portable exe │
+          │            │    │             │
+          │5-7 min     │    │8-10 min     │
+          │            │    │             │
+          └────┬───────┘    └────┬────────┘
+               │                 │
+           Uploads           Uploads
+           linux-builds      windows-builds
+               │                 │
+               └────────┬────────┘
+                        │
+             ┌──────────▼──────────────┐
+             │  Release Job            │
+             │  (等待两个构建完成)     │
+             └──────────┬──────────────┘
+                        │
+             ┌──────────▼──────────────┐
+             │ 下载所有 artifacts      │
+             │ 创建 GitHub Release     │
+             │ 上传编译文件到 Release  │
+             │ 添加发布说明           │
+             └──────────┬──────────────┘
+                        │
+             ┌──────────▼──────────────┐
+             │ 完成！                  │
+             │ 用户可下载发布版本      │
+             └────────────────────────┘
 ```
 
 ## 工作流中的任务详情
@@ -51,44 +51,44 @@
 
 #### Linux Build
 ```
-Ubuntu Latest
+Ubuntu Latest (并行执行)
     ↓
 检出代码
     ↓
 安装 Node.js 18
-    ↓
-安装系统依赖 (wine for Windows build)
     ↓
 npm install
     ↓
-npm run build
+npm run build:linux
     ↓
 生成:
-  - Browser Manager-1.0.0.AppImage (Linux 直接运行)
-  - browser-manager-1.0.0.zip (Linux 压缩包)
+  - Browser Manager-1.0.0.AppImage (102 MB - Linux 直接运行)
+  - browser-manager-1.0.0.zip (97 MB - Linux 压缩包)
     ↓
 上传 artifacts (linux-builds)
+    ↓
+耗时：5-7 分钟
 ```
 
-#### Windows Build (on Linux with Wine)
+### Windows Build
 ```
-Ubuntu Latest
+Windows Latest (并行执行)
     ↓
 检出代码
     ↓
 安装 Node.js 18
-    ↓
-安装系统依赖 (wine for cross-compilation)
     ↓
 npm install
     ↓
 npm run build:win
     ↓
 生成:
-  - Browser-Manager-Windows.zip
-    包含: Browser Manager.exe + 所有 DLL
+  - Browser Manager Setup-1.0.0.exe (NSIS 安装程序)
+  - Browser Manager-portable.exe (便携版)
     ↓
 上传 artifacts (windows-builds)
+    ↓
+耗时：8-10 分钟
 ```
 
 ### 2. Release 任务 (sequential)
@@ -124,35 +124,30 @@ npm run build:win
 
 ## 时间预计
 
-| 步骤 | 预计时间 |
-|------|----------|
-| 检出代码 | 1-2 分钟 |
-| 安装依赖 | 2-3 分钟 |
-| Linux 编译 | 4-5 分钟 |
-| Windows 编译 | 5-7 分钟 |
-| 创建 Release | 1-2 分钟 |
-| **总计** | **13-19 分钟** |
+| 步骤 | 预计时间 | 备注 |
+|------|----------|------|
+| 检出代码 | 1-2 分钟 | Linux 和 Windows 并行 |
+| 安装依赖 | 2-3 分钟 | 各平台独立安装 |
+| Linux 编译 | 5-7 分钟 | AppImage + ZIP |
+| Windows 编译 | 8-10 分钟 | NSIS + Portable exe |
+| 等待构建完成 | (最大时间) | 取两个构建的最长时间 |
+| 创建 Release | 1-2 分钟 | 顺序执行 |
+| **总计** | **约 15-18 分钟** | 并行构建时间优化 |
 
 ## 输出文件
 
-### Linux Build
+### Linux Build (Ubuntu Latest)
 ```
 dist/
-├── Browser Manager-1.0.0.AppImage      (102 MB)
-└── browser-manager-1.0.0.zip           (97 MB)
+├── Browser Manager-1.0.0.AppImage      (102 MB - 可直接运行)
+└── browser-manager-1.0.0.zip           (97 MB - 压缩包)
 ```
 
-### Windows Build
+### Windows Build (Windows Latest)
 ```
 dist/
-└── Browser-Manager-Windows.zip         (105 MB)
-    └── 包含所有依赖:
-        ├── Browser Manager.exe         (169 MB)
-        ├── ffmpeg.dll
-        ├── libEGL.dll
-        ├── libGLESv2.dll
-        ├── d3dcompiler_47.dll
-        ├── 其他 DLL 和资源文件...
+├── Browser Manager Setup-1.0.0.exe     (约 150 MB - NSIS 安装程序)
+└── Browser Manager-portable.exe        (约 169 MB - 便携版 exe)
 ```
 
 ## 监控和日志
@@ -160,22 +155,32 @@ dist/
 ### 查看进度
 1. GitHub 项目 → Actions 选项卡
 2. 点击正在运行的工作流
-3. 查看每个 job 的状态
+3. 查看两个并行的构建 job（ubuntu-linux 和 windows）
 4. 点击 job 查看详细日志
+5. 所有构建完成后，会自动执行 release job
 
 ### 常见日志输出
 
-**成功的构建**:
+**Linux 构建成功**:
 ```
 ✓ packaging       platform=linux arch=x64
 ✓ building        target=AppImage
 ✓ building        target=zip
+✓ uploading artifacts: linux-builds
+```
+
+**Windows 构建成功**:
+```
+✓ packaging       platform=win32 arch=x64
+✓ building        target=nsis
+✓ building        target=portable
+✓ uploading artifacts: windows-builds
 ```
 
 **成功的发布**:
 ```
 ✓ Release created
-✓ 3 files uploaded
+✓ 4 files uploaded
 ```
 
 ## 自定义工作流

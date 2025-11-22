@@ -24,29 +24,38 @@
 
 ### 自动编译过程
 
-工作流会执行以下步骤：
+工作流会并行执行以下步骤：
 
-#### 在 Linux 上编译：
+#### 在 Ubuntu 上编译 Linux 版本：
 - 编译 AppImage（Linux 直接运行格式）
 - 编译 ZIP 分发包（Linux）
+- 时间：5-7 分钟
 
-#### 在同一 Linux 环境中编译 Windows 版本：
-- 使用 Wine 和 electron-builder
-- 编译 Windows exe 及所有依赖
-- 生成 Browser-Manager-Windows.zip
+#### 在 Windows 上编译 Windows 版本：
+- 使用 native electron-builder 编译
+- 生成 NSIS 安装程序（exe）
+- 生成便携版可执行文件
+- 时间：8-10 分钟
+
+#### 发布阶段：
+- 等待两个平台编译完成
+- 创建 GitHub Release
+- 上传编译文件
+- 时间：1-2 分钟
 
 ### 查看编译进度
 
 1. 在 Actions 页面可以看到正在运行的工作流
-2. 点击可以查看详细的编译日志
-3. 编译过程通常需要 10-15 分钟
+2. 两个编译任务会并行执行（ubuntu 和 windows）
+3. 点击可以查看每个平台的详细编译日志
+4. 编译过程通常需要 10-15 分钟
 
 ### 发布完成
 
 编译完成后，工作流会自动：
 - 创建新的 GitHub Release
-- 上传编译好的文件到 Release
-- 添加发布说明
+- 上传所有编译好的文件到 Release
+- 添加平台特定的发布说明
 
 ### 下载编译结果
 
@@ -54,8 +63,8 @@
 2. 点击右侧的 **Releases**
 3. 找到最新的 Release
 4. 下载需要的文件：
-   - Windows: `Browser-Manager-Windows.zip`
-   - Linux: `Browser Manager-1.0.0.AppImage` 或 `browser-manager-1.0.0.zip`
+   - **Windows**: `Browser Manager Setup-X.X.X.exe`（推荐）或 `Browser Manager-portable.exe`
+   - **Linux**: `Browser Manager-X.X.X.AppImage`（推荐）或 `browser-manager-X.X.X.zip`
 
 ## 工作流文件
 
