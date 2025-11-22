@@ -12,9 +12,9 @@ function createWindow() {
   const preloadPath = path.join(__dirname, 'preload.js');
   const indexPath = path.join(__dirname, 'index.html');
   
-  console.log('Loading app...');
-  console.log('Preload path:', preloadPath);
-  console.log('Index path:', indexPath);
+  console.log('\n========== 应用启动 ==========');
+  console.log('预加载脚本:', preloadPath);
+  console.log('HTML 文件:', indexPath);
   
   mainWindow = new BrowserWindow({
     width: 1000,
@@ -24,15 +24,23 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
-      sandbox: false,
     }
   });
 
   mainWindow.webContents.on('console-message', (level, message, line, sourceId) => {
-    console.log(`[${sourceId}:${line}] ${message}`);
+    console.log(`[Renderer] ${message}`);
+  });
+
+  mainWindow.webContents.on('crashed', () => {
+    console.error('渲染进程崩溃!');
+  });
+
+  mainWindow.webContents.on('preload-error', (event, preloadPath, error) => {
+    console.error('预加载脚本加载失败:', preloadPath, error);
   });
 
   mainWindow.loadFile(indexPath);
+  console.log('========== 应用已加载 ==========\n');
 
   mainWindow.on('closed', function () {
     mainWindow = null;

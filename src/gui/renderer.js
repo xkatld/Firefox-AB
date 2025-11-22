@@ -1,9 +1,16 @@
 let profiles = [];
 
-console.log('Renderer process started');
-console.log('window.api available:', typeof window.api !== 'undefined');
-if (window.api) {
-  console.log('API methods:', Object.keys(window.api));
+console.log('========== 渲染进程已启动 ==========');
+console.log('检查 window.api...');
+console.log('window.api 可用:', typeof window.api !== 'undefined');
+
+if (typeof window.api !== 'undefined') {
+  console.log('✓ API 已加载');
+  console.log('可用方法:', Object.keys(window.api));
+} else {
+  console.error('✗ API 加载失败！window.api is undefined');
+  console.error('window 对象:', typeof window);
+  console.error('contextBridge 可用:', typeof window.api);
 }
 
 async function loadProfiles() {

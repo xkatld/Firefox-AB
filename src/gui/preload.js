@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('api', {
   listProfiles: () => ipcRenderer.invoke('list-profiles'),
@@ -7,3 +7,5 @@ contextBridge.exposeInMainWorld('api', {
   openProfile: (name, browserType = 'chromium') => ipcRenderer.invoke('open-profile', name, browserType),
   closeProfile: (name) => ipcRenderer.invoke('close-profile', name),
 });
+
+console.log('✓ Preload script loaded successfully');
