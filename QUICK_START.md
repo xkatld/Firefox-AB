@@ -50,10 +50,13 @@ node -v  # 应该显示 v24.11.1 或更高
 npm -v   # 应该显示 11.6.2 或更高
 ```
 
-### 安装依赖
+### 安装依赖（包括浏览器）
 ```bash
 npm install
 ```
+
+**重要**: `npm install` 会自动运行 postinstall 脚本，下载 Chromium 和 Firefox 浏览器（约 300MB）。  
+浏览器将缓存到 `~/.cache/ms-playwright/`，首次会花 2-5 分钟。
 
 ### 运行 GUI
 ```bash
@@ -114,10 +117,38 @@ Browser-Manager/
 ## 功能
 
 ✅ 创建多个独立浏览器 Profile  
+✅ 支持 Chrome 和 Firefox 两种浏览器  
 ✅ 每个 Profile 独立数据（Cookies、LocalStorage 等）  
-✅ 支持加载 Chromium 扩展  
+✅ 内置 My Fingerprint 指纹识别保护（Chrome + Firefox）  
 ✅ CLI 和 GUI 双界面  
 ✅ Windows 和 Linux 支持  
+✅ 自动下载并缓存浏览器（首次 npm install）  
+
+---
+
+## 用户使用流程
+
+### 对于最终用户（下载编译版本）
+
+1. **下载应用**
+   - Windows: 下载 `Browser-Manager-Windows-v1.0.0.zip`（113MB）
+   - Linux: 下载 `Browser Manager-1.0.0.AppImage`（107MB）
+
+2. **首次启动**
+   - 打开应用
+   - 如果浏览器未安装，会自动下载（需要网络连接）
+   - 下载时间：2-5 分钟（一次性）
+
+3. **使用应用**
+   - 创建浏览器 Profile（Chrome 或 Firefox）
+   - 浏览器自动启动，指纹识别保护默认启用
+   - 完全隐私的独立浏览环境
+
+### 对于开发者（本地编译）
+
+1. **npm install** → 自动下载浏览器
+2. **npm start** → 启动 GUI
+3. **npm run build:all** → 编译所有平台
 
 ---
 
@@ -154,7 +185,3 @@ GitHub Actions 工作流自动：
 ## 许可证
 
 MIT
-
-## 支持
-
-遇到问题？查看 [WINDOWS_SETUP.md](WINDOWS_SETUP.md) 或 [BUILD_INSTRUCTIONS.md](BUILD_INSTRUCTIONS.md)
