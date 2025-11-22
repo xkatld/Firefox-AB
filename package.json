@@ -9,7 +9,7 @@
     "start": "electron ./src/gui/main.js",
     "cli": "node ./src/cli.js",
     "dev": "electron ./src/gui/main.js --dev",
-    "build": "electron-builder -w"
+    "build": "CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder"
   },
   "dependencies": {
     "playwright": "^1.45.0",
@@ -28,21 +28,11 @@
       "plugins/**/*",
       "package.json"
     ],
-    "win": {
+    "linux": {
       "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64"
-          ]
-        }
+        "AppImage",
+        "zip"
       ]
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
     }
   }
 }
