@@ -1,0 +1,4 @@
+owner: xkatld
+repo: Firefox-AB
+provider: github
+updaterCacheDirName: browser-manager-updater
