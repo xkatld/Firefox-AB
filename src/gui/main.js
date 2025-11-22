@@ -9,18 +9,29 @@ let mainWindow;
 let browserProcesses = {};
 
 function createWindow() {
+  const preloadPath = path.join(__dirname, 'preload.js');
+  const indexPath = path.join(__dirname, 'index.html');
+  
+  console.log('Loading app...');
+  console.log('Preload path:', preloadPath);
+  console.log('Index path:', indexPath);
+  
   mainWindow = new BrowserWindow({
     width: 1000,
     height: 700,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: preloadPath,
       nodeIntegration: false,
       contextIsolation: true,
       enableRemoteModule: false,
+      sandbox: false,
     }
   });
 
-  const indexPath = path.join(__dirname, 'index.html');
+  mainWindow.webContents.on('console-message', (level, message, line, sourceId) => {
+    console.log(`[${sourceId}:${line}] ${message}`);
+  });
+
   mainWindow.loadFile(indexPath);
 
   mainWindow.on('closed', function () {

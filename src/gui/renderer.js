@@ -1,5 +1,11 @@
 let profiles = [];
 
+console.log('Renderer process started');
+console.log('window.api available:', typeof window.api !== 'undefined');
+if (window.api) {
+  console.log('API methods:', Object.keys(window.api));
+}
+
 async function loadProfiles() {
   try {
     const result = await window.api.listProfiles();
