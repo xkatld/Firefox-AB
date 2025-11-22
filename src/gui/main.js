@@ -61,9 +61,9 @@ ipcMain.handle('list-profiles', async () => {
   }
 });
 
-ipcMain.handle('create-profile', async (event, name) => {
+ipcMain.handle('create-profile', async (event, name, browserType = 'chromium') => {
   try {
-    const profilePath = await createProfile(name);
+    const profilePath = await createProfile(name, browserType);
     return { success: true, path: profilePath };
   } catch (error) {
     return { error: error.message };
@@ -79,10 +79,10 @@ ipcMain.handle('delete-profile', async (event, name) => {
   }
 });
 
-ipcMain.handle('open-profile', async (event, name) => {
+ipcMain.handle('open-profile', async (event, name, browserType = 'chromium') => {
   try {
     const profilePath = getProfilePath(name);
-    const { context } = await launchBrowser(profilePath);
+    const { context } = await launchBrowser(profilePath, browserType);
     browserProcesses[name] = context;
     return { success: true };
   } catch (error) {

@@ -10,12 +10,17 @@ program
   .version('1.0.0');
 
 program
-  .command('create <name>')
+  .command('create <name> [browserType]')
   .description('创建新的配置')
-  .action(async (name) => {
+  .action(async (name, browserType = 'chromium') => {
     try {
-      const profilePath = await createProfile(name);
-      console.log(`配置 "${name}" 创建成功，路径: ${profilePath}`);
+      const validTypes = ['chromium', 'firefox'];
+      if (!validTypes.includes(browserType)) {
+        throw new Error(`不支持的浏览器类型: ${browserType}。支持: ${validTypes.join(', ')}`);
+      }
+      const profilePath = await createProfile(name, browserType);
+      const typeLabel = browserType === 'firefox' ? '火狐' : '谷歌';
+      console.log(`配置 "${name}" (${typeLabel}) 创建成功，路径: ${profilePath}`);
     } catch (error) {
       console.error(`错误: ${error.message}`);
       process.exit(1);
@@ -59,13 +64,20 @@ program
   });
 
 program
-  .command('open <name>')
+  .command('open <name> [browserType]')
   .description('在浏览器中打开配置')
-  .action(async (name) => {
+  .action(async (name, browserType) => {
     try {
+      let type = browserType || 'chromium';
+      
+      if (browserType && !['chromium', 'firefox'].includes(browserType)) {
+        throw new Error(`不支持的浏览器类型: ${browserType}。支持: chromium, firefox`);
+      }
+      
       const profilePath = getProfilePath(name);
-      console.log(`正在打开配置 "${name}"...`);
-      const { context } = await launchBrowser(profilePath);
+      const typeLabel = type === 'firefox' ? '火狐' : '谷歌';
+      console.log(`正在打开配置 "${name}" (${typeLabel})...`);
+      const { context } = await launchBrowser(profilePath, type);
       console.log(`浏览器启动成功，按 Ctrl+C 关闭。`);
       
       process.on('SIGINT', async () => {

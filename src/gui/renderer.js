@@ -25,7 +25,9 @@ async function loadProfiles() {
 
 async function createNewProfile() {
   const input = document.getElementById('profileName');
+  const browserSelect = document.getElementById('browserType');
   const name = input.value.trim();
+  const browserType = browserSelect ? browserSelect.value : 'chromium';
 
   if (!name) {
     showMessage('请输入配置名称', 'error');
@@ -33,11 +35,11 @@ async function createNewProfile() {
   }
 
   try {
-    const result = await window.api.createProfile(name);
+    const result = await window.api.createProfile(name, browserType);
     if (result.error) {
       showMessage(result.error, 'error');
     } else {
-      showMessage(`配置 "${name}" 创建成功`, 'success');
+      showMessage(`配置 "${name}" (${browserType === 'firefox' ? '火狐' : '谷歌'}) 创建成功`, 'success');
       input.value = '';
       await loadProfiles();
     }
@@ -64,13 +66,13 @@ async function deleteProfile(name) {
   }
 }
 
-async function openProfile(name) {
+async function openProfile(name, browserType = 'chromium') {
   const button = event.target;
   button.disabled = true;
   button.textContent = '打开中...';
 
   try {
-    const result = await window.api.openProfile(name);
+    const result = await window.api.openProfile(name, browserType);
     if (result.error) {
       showMessage(result.error, 'error');
       button.disabled = false;
@@ -97,15 +99,19 @@ function renderProfiles() {
     return;
   }
 
-  container.innerHTML = profiles.map(profile => `
+  container.innerHTML = profiles.map(profile => {
+    const browserLabel = profile.browserType === 'firefox' ? '🦊 火狐' : '🔵 谷歌';
+    return `
     <div class="profile-card">
       <div class="profile-name">${escapeHtml(profile.name)}</div>
+      <div class="profile-browser">${browserLabel}</div>
       <div class="profile-actions">
-        <button class="btn-secondary" onclick="openProfile('${escapeHtml(profile.name)}')">打开</button>
+        <button class="btn-secondary" onclick="openProfile('${escapeHtml(profile.name)}', '${profile.browserType}')">打开</button>
         <button class="btn-danger" onclick="deleteProfile('${escapeHtml(profile.name)}')">删除</button>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 
 function showMessage(text, type) {

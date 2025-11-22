@@ -1,4 +1,4 @@
-import { chromium } from 'playwright';
+import { chromium, firefox } from 'playwright';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -26,38 +26,50 @@ async function getExtensionPaths() {
   }
 }
 
-export async function launchBrowser(profilePath) {
+export async function launchBrowser(profilePath, browserType = 'chromium') {
   if (!profilePath) {
-    throw new Error('Profile path is required');
+    throw new Error('配置路径是必需的');
+  }
+
+  if (!['chromium', 'firefox'].includes(browserType)) {
+    throw new Error(`不支持的浏览器类型: ${browserType}。支持: chromium, firefox`);
   }
 
   try {
     await fs.mkdir(profilePath, { recursive: true });
   } catch (error) {
-    throw new Error(`Failed to create profile directory: ${error.message}`);
+    throw new Error(`创建配置目录失败: ${error.message}`);
   }
 
   const extensions = await getExtensionPaths();
-
-  const launchArgs = [
-    '--disable-blink-features=AutomationControlled',
-    '-disable-extensions-except=' + extensions.join(','),
-    '--load-extension=' + extensions.join(',')
-  ].filter(arg => !arg.includes('=,') && !arg.includes(',-'));
+  let context;
 
   try {
-    const context = await chromium.launchPersistentContext(profilePath, {
-      headless: false,
-      args: launchArgs,
-      locale: 'en-US',
-    });
+    if (browserType === 'chromium') {
+      const launchArgs = [
+        '--disable-blink-features=AutomationControlled',
+        '-disable-extensions-except=' + extensions.join(','),
+        '--load-extension=' + extensions.join(',')
+      ].filter(arg => !arg.includes('=,') && !arg.includes(',-'));
+
+      context = await chromium.launchPersistentContext(profilePath, {
+        headless: false,
+        args: launchArgs,
+        locale: 'zh-CN',
+      });
+    } else if (browserType === 'firefox') {
+      context = await firefox.launchPersistentContext(profilePath, {
+        headless: false,
+        locale: 'zh-CN',
+      });
+    }
 
     const page = await context.newPage();
     await page.goto('about:blank');
 
-    return { context, page };
+    return { context, page, browserType };
   } catch (error) {
-    throw new Error(`Failed to launch browser: ${error.message}`);
+    throw new Error(`启动浏览器失败: ${error.message}`);
   }
 }
 
