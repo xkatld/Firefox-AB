@@ -25,13 +25,15 @@ Browser Manager 是一款基于 Playwright 的TUI工具，帮助你管理多个�
 
 从 [Releases](../../releases) 下载对应系统的压缩包并解压
 
+**无需安装Node.js，开箱即用**
+
 **Windows**:
 1. 解压 `Browser-Manager-Windows-Both-1.0.0.zip`
-2. 双击运行 `start.bat`
+2. 双击运行 `start.bat` 或 `browser-manager.exe`
 
 **Linux**:
 1. 解压 `Browser-Manager-Linux-Both-1.0.0.zip`
-2. 运行 `./start.sh`
+2. 运行 `./start.sh` 或 `./browser-manager`
 
 ### 从源码运行
 

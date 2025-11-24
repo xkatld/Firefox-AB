@@ -122,7 +122,7 @@ try {
   
   console.log(`✓ 浏览器复制完成\n`);
 
-  console.log('步骤3: 打包应用');
+  console.log('步骤3: 打包独立可执行文件');
   const unpackedDir = isWindows 
     ? path.join(distDir, 'win-unpacked')
     : path.join(distDir, 'linux-unpacked');
@@ -132,10 +132,30 @@ try {
   }
   mkdirSync(unpackedDir, { recursive: true });
   
-  console.log('复制项目文件...');
-  cpSync(path.join(__dirname, 'src'), path.join(unpackedDir, 'src'), { recursive: true });
-  cpSync(path.join(__dirname, 'node_modules'), path.join(unpackedDir, 'node_modules'), { recursive: true });
-  cpSync(path.join(__dirname, 'package.json'), path.join(unpackedDir, 'package.json'));
+  const tempDir = path.join(__dirname, 'temp-build');
+  if (existsSync(tempDir)) {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+  mkdirSync(tempDir, { recursive: true });
+  
+  console.log('准备打包文件...');
+  cpSync(path.join(__dirname, 'src'), path.join(tempDir, 'src'), { recursive: true });
+  cpSync(path.join(__dirname, 'node_modules'), path.join(tempDir, 'node_modules'), { recursive: true });
+  cpSync(path.join(__dirname, 'package.json'), path.join(tempDir, 'package.json'));
+  
+  const exeName = isWindows ? 'browser-manager.exe' : 'browser-manager';
+  const exePath = path.join(unpackedDir, exeName);
+  
+  console.log('使用caxa打包...');
+  
+  execSync(`npx caxa --input "${tempDir}" --output "${exePath}" -- "{{caxa}}/src/cli.js"`, { 
+    stdio: 'inherit',
+    shell: true 
+  });
+  
+  rmSync(tempDir, { recursive: true, force: true });
+  
+  console.log('复制资源文件...');
   cpSync(browsersDir, path.join(unpackedDir, 'browsers'), { recursive: true });
   cpSync(pluginsDir, path.join(unpackedDir, 'plugins'), { recursive: true });
   
@@ -144,9 +164,10 @@ try {
   } else {
     cpSync(path.join(__dirname, 'start.sh'), path.join(unpackedDir, 'start.sh'));
     execSync(`chmod +x ${path.join(unpackedDir, 'start.sh')}`);
+    execSync(`chmod +x ${exePath}`);
   }
   
-  console.log('✓ 项目文件已复制\n');
+  console.log('✓ 打包完成\n');
 
   console.log('步骤4: 打包');
   

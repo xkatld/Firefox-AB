@@ -21,5 +21,6 @@
     "sql.js": "^1.10.3"
   },
   "devDependencies": {
+    "caxa": "^3.0.1"
   }
 }
