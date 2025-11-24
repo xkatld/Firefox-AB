@@ -4,14 +4,13 @@
   "description": "Multi-account browser profile manager with independent data directories",
   "author": "Browser Manager",
   "type": "module",
-  "main": "src/gui/main.js",
+  "main": "src/cli.js",
   "engines": {
     "node": ">=24.0.0",
     "pnpm": ">=10.0.0"
   },
   "scripts": {
     "start": "node src/cli.js",
-    "gui": "electron ./src/gui/main.js",
     "package": "node build-with-browsers.js"
   },
   "dependencies": {
@@ -21,45 +20,9 @@
     "chalk": "^5.3.0",
     "cli-table3": "^0.6.3",
     "playwright": "^1.45.0",
-    "sql.js": "^1.10.3",
-    "vue": "^3.5.24"
+    "sql.js": "^1.10.3"
   },
   "devDependencies": {
-    "electron": "^33.0.0",
-    "electron-builder": "^25.0.0",
-    "tailwindcss": "^3.4.0"
   },
-  "build": {
-    "appId": "com.browsermanager.app",
-    "productName": "Browser Manager",
-    "defaultArch": "x64",
-    "files": [
-      "src/**/*",
-      "node_modules/**/*",
-      "package.json",
-      "pnpm-lock.yaml"
-    ],
-    "extraFiles": [
-      {
-        "from": "browsers",
-        "to": "browsers"
-      },
-      {
-        "from": "plugins",
-        "to": "plugins"
-      }
-    ],
-    "win": {
-      "target": [
-        "dir"
-      ],
-      "signAndEditExecutable": false
-    },
-    "linux": {
-      "target": [
-        "dir"
-      ],
-      "category": "Utility"
-    }
-  }
+
 }
