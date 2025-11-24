@@ -1,0 +1,106 @@
+name: 自动构建打包
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - '.gitignore'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: 构建应用-${{ matrix.platform }}-${{ matrix.browser }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: Windows
+            os: windows-latest
+            browser: firefox
+            browser_name: Firefox
+          - platform: Windows
+            os: windows-latest
+            browser: chromium
+            browser_name: Chromium
+          - platform: Windows
+            os: windows-latest
+            browser: both
+            browser_name: Both
+          - platform: Linux
+            os: ubuntu-latest
+            browser: firefox
+            browser_name: Firefox
+          - platform: Linux
+            os: ubuntu-latest
+            browser: chromium
+            browser_name: Chromium
+          - platform: Linux
+            os: ubuntu-latest
+            browser: both
+            browser_name: Both
+    
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+      
+      - name: 验证插件目录
+        shell: bash
+        run: |
+          if [ ! -d "plugins" ]; then
+            echo "错误: plugins 目录不存在"
+            exit 1
+          fi
+          echo "✓ 插件目录验证通过"
+      
+      - name: 安装系统依赖
+        if: matrix.platform == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libnss3 libxss1 libasound2t64
+          echo "✓ 系统依赖安装完成"
+      
+      - name: 配置 pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: latest
+      
+      - name: 配置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'pnpm'
+      
+      - name: 安装项目依赖
+        run: pnpm install
+      
+      - name: 构建应用 - ${{ matrix.browser_name }}
+        shell: bash
+        run: node build-with-browsers.js --browsers=${{ matrix.browser }}
+        env:
+          NODE_ENV: production
+      
+      - name: 验证构建产物
+        shell: bash
+        run: |
+          BUILD_FILE="dist/Browser-Manager-${{ matrix.platform }}-${{ matrix.browser_name }}-1.0.0.zip"
+          if [ ! -f "$BUILD_FILE" ]; then
+            echo "错误: 构建产物不存在: $BUILD_FILE"
+            ls -la dist/
+            exit 1
+          fi
+          SIZE=$(du -h "$BUILD_FILE" | cut -f1)
+          echo "✓ 构建产物验证通过"
+          echo "  文件: $BUILD_FILE"
+          echo "  大小: $SIZE"
+      
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-${{ matrix.browser_name }}-build
+          path: dist/*.zip
+          retention-days: 30
+          compression-level: 9

@@ -1,0 +1,61 @@
+{
+  "name": "browser-manager",
+  "version": "1.0.0",
+  "description": "Multi-account browser profile manager with independent data directories",
+  "author": "Browser Manager",
+  "type": "module",
+  "main": "src/gui/main.js",
+  "engines": {
+    "node": ">=24.0.0",
+    "pnpm": ">=10.0.0"
+  },
+  "scripts": {
+    "start": "electron ./src/gui/main.js",
+    "package": "node build-with-browsers.js"
+  },
+  "dependencies": {
+    "archiver": "^6.0.0",
+    "better-sqlite3": "^9.2.2",
+    "commander": "^11.0.0",
+    "playwright": "^1.45.0",
+    "vue": "^3.5.24"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0",
+    "tailwindcss": "^3.4.0"
+  },
+  "build": {
+    "appId": "com.browsermanager.app",
+    "productName": "Browser Manager",
+    "defaultArch": "x64",
+    "files": [
+      "src/**/*",
+      "node_modules/**/*",
+      "package.json",
+      "pnpm-lock.yaml"
+    ],
+    "extraFiles": [
+      {
+        "from": "browsers",
+        "to": "browsers"
+      },
+      {
+        "from": "plugins",
+        "to": "plugins"
+      }
+    ],
+    "win": {
+      "target": [
+        "dir"
+      ],
+      "signAndEditExecutable": false
+    },
+    "linux": {
+      "target": [
+        "dir"
+      ],
+      "category": "Utility"
+    }
+  }
+}
