@@ -1,20 +1,14 @@
 # Browser Manager
 
-<div align="center">
-
-**多浏览器配置管理工具**
+**命令行浏览器配置管理工具**
 
 支持 Chromium 和 Firefox 的独立配置管理，内置指纹保护和代理配置
-
-[下载](../../releases) · [使用指南](#使用) · [反馈问题](../../issues)
-
-</div>
 
 ---
 
 ## 简介
 
-Browser Manager 是一款基于 Electron 和 Playwright 的桌面应用，帮助你管理多个独立的浏览器配置。每个配置拥有完全隔离的数据存储，支持指纹伪装和代理设置，适合需要多账号管理、隐私保护的场景。
+Browser Manager 是一款基于 Playwright 的命令行工具，帮助你管理多个独立的浏览器配置。每个配置拥有完全隔离的数据存储，支持指纹伪装和代理设置，适合需要多账号管理、隐私保护的场景。
 
 ## 核心功能
 
@@ -23,64 +17,46 @@ Browser Manager 是一款基于 Electron 和 Playwright 的桌面应用，帮助
 - **指纹保护** - Canvas、WebGL、音频指纹随机化
 - **代理配置** - 支持 HTTP/HTTPS/SOCKS5 代理及认证
 - **双浏览器** - 同时支持 Chromium 和 Firefox
-- **现代界面** - 基于 Vue 3 的直观操作界面
+- **交互界面** - 友好的命令行交互菜单
 
 ## 安装
 
-### 下载安装包
-
-前往 [Releases](../../releases) 页面下载适合你系统的安装包：
-
-- **Windows**: `Browser-Manager-Windows-Both-1.0.0.zip`
-- **Linux**: `Browser-Manager-Linux-Both-1.0.0.zip`
-
-解压后直接运行。
-
-### 从源码运行
-
 ```bash
-# 克隆项目
 git clone https://github.com/user/Firefox-AB.git
 cd Firefox-AB
-
-# 安装依赖
 pnpm install
-
-# 启动应用
 pnpm start
 ```
 
-**环境要求**: Node.js 18+ 和 pnpm
+环境要求: Node.js 18+ 和 pnpm
 
 ## 使用
 
-### 图形界面
+运行 `pnpm start` 进入交互式菜单：
 
-启动应用后，你可以：
+```
+╔══════════════════════════════════════╗
+║   浏览器配置管理器 v1.0.0          ║
+╚══════════════════════════════════════╝
 
-1. **仪表盘** - 查看统计信息、快速访问最近和收藏的配置
-2. **配置管理** - 浏览、搜索、启动所有浏览器配置
-3. **创建配置** - 配置浏览器类型、代理、启动参数等
-4. **分组管理** - 用颜色和名称组织配置
-5. **设置** - 调整应用首选项
-
-### 命令行
-
-```bash
-# 创建配置
-node src/cli.js create myProfile --browser firefox --fingerprint
-
-# 启动浏览器
-node src/cli.js open myProfile
-
-# 列出所有配置
-node src/cli.js list
-
-# 删除配置
-node src/cli.js remove myProfile
+? 请选择操作:
+  📋 查看所有配置
+  ➕ 创建新配置
+  ▶️  打开配置
+  🗑️  删除配置
+  ✏️  编辑配置
+  📝 重命名配置
+  ⭐ 星标管理
+  📁 分组管理
+  🔄 重新生成指纹
+  📤 导出配置
+  📥 导入配置
+  🗂️  批量操作
+  🔴 关闭浏览器
+  ❌ 退出
 ```
 
-**更多命令**: 运行 `node src/cli.js --help` 查看完整文档
+所有操作通过交互式菜单完成，无需记忆命令。
 
 ## 指纹保护
 
@@ -110,23 +86,16 @@ node src/cli.js remove myProfile
 
 ## 技术架构
 
-- **Electron** - 跨平台桌面应用
 - **Playwright** - 浏览器控制和自动化
-- **Vue 3** - 响应式用户界面
+- **Inquirer** - 命令行交互界面
 - **sql.js** - 轻量级数据存储
-- **Tailwind CSS** - 现代化样式
+- **Chalk** - 终端颜色输出
 
 ## 开发
 
 ```bash
-# 安装依赖
 pnpm install
-
-# 开发模式
 pnpm start
-
-# 构建打包
-pnpm build
 ```
 
 ## 许可证
