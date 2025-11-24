@@ -20,24 +20,8 @@ jobs:
         include:
           - platform: Windows
             os: windows-latest
-            browser: firefox
-            browser_name: Firefox
-          - platform: Windows
-            os: windows-latest
-            browser: chromium
-            browser_name: Chromium
-          - platform: Windows
-            os: windows-latest
             browser: both
             browser_name: Both
-          - platform: Linux
-            os: ubuntu-latest
-            browser: firefox
-            browser_name: Firefox
-          - platform: Linux
-            os: ubuntu-latest
-            browser: chromium
-            browser_name: Chromium
           - platform: Linux
             os: ubuntu-latest
             browser: both
@@ -60,7 +44,7 @@ jobs:
         if: matrix.platform == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libnss3 libxss1 libasound2t64
+          sudo apt-get install -y libnss3 libxss1 libasound2t64 build-essential python3
           echo "✓ 系统依赖安装完成"
       
       - name: 配置 pnpm
@@ -75,7 +59,7 @@ jobs:
           cache: 'pnpm'
       
       - name: 安装项目依赖
-        run: pnpm install
+        run: pnpm install --no-frozen-lockfile
       
       - name: 构建应用 - ${{ matrix.browser_name }}
         shell: bash

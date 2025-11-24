@@ -54,7 +54,7 @@ export async function createProfile(name, options = {}) {
       createdAt: new Date().toISOString()
     };
     
-    db.createProfile(profileData);
+    await db.createProfile(profileData);
     
     console.log(`✓ 配置 "${name}" 创建成功`);
     return profilePath;
@@ -69,7 +69,7 @@ export async function createProfile(name, options = {}) {
 
 export async function listProfiles() {
   try {
-    const profiles = db.listProfiles();
+    const profiles = await db.listProfiles();
     
     const profilesWithPath = profiles.map(profile => ({
       ...profile,
@@ -92,7 +92,7 @@ export async function removeProfile(name) {
   const profilePath = path.join(PROFILES_DIR, name);
   
   try {
-    db.deleteProfile(name);
+    await db.deleteProfile(name);
     await fs.rm(profilePath, { recursive: true, force: true });
     console.log(`✓ 配置 "${name}" 删除成功`);
   } catch (error) {
@@ -111,9 +111,9 @@ export async function updateProfile(name, updates) {
   }
   
   try {
-    db.updateProfile(name, updates);
+    await db.updateProfile(name, updates);
     console.log(`✓ 配置 "${name}" 更新成功`);
-    return db.getProfile(name);
+    return await db.getProfile(name);
   } catch (error) {
     console.error(`更新配置失败:`, error.message);
     throw new Error(`更新配置 "${name}" 失败: ${error.message}`);
@@ -132,7 +132,7 @@ export async function renameProfile(oldName, newName) {
   const newPath = path.join(PROFILES_DIR, newName);
   
   try {
-    db.renameProfile(oldName, newName);
+    await db.renameProfile(oldName, newName);
     await fs.rename(oldPath, newPath);
     console.log(`✓ 配置 "${oldName}" 重命名为 "${newName}" 成功`);
   } catch (error) {
@@ -146,7 +146,7 @@ export async function renameProfile(oldName, newName) {
 
 export async function updateProfileUsage(name) {
   try {
-    db.updateProfileUsage(name);
+    await db.updateProfileUsage(name);
   } catch (error) {
     console.error(`更新配置使用统计失败:`, error.message);
   }
@@ -155,7 +155,7 @@ export async function updateProfileUsage(name) {
 export async function regenerateFingerprint(name) {
   try {
     const fingerprint = generateFingerprint();
-    db.updateProfile(name, { fingerprint });
+    await db.updateProfile(name, { fingerprint });
     console.log(`✓ 配置 "${name}" 指纹重新生成成功`);
     return fingerprint;
   } catch (error) {
@@ -170,7 +170,7 @@ export async function createGroup(name, color = 'blue') {
   }
 
   try {
-    const group = db.createGroup({
+    const group = await db.createGroup({
       name,
       color,
       createdAt: new Date().toISOString()
@@ -188,7 +188,7 @@ export async function createGroup(name, color = 'blue') {
 
 export async function listGroups() {
   try {
-    return db.listGroups();
+    return await db.listGroups();
   } catch (error) {
     console.error('加载分组失败:', error.message);
     throw error;
@@ -197,9 +197,9 @@ export async function listGroups() {
 
 export async function updateGroup(id, updates) {
   try {
-    db.updateGroup(id, updates);
+    await db.updateGroup(id, updates);
     console.log(`✓ 分组更新成功`);
-    const groups = db.listGroups();
+    const groups = await db.listGroups();
     return groups.find(g => g.id === id);
   } catch (error) {
     console.error('更新分组失败:', error.message);
@@ -209,7 +209,7 @@ export async function updateGroup(id, updates) {
 
 export async function deleteGroup(id) {
   try {
-    db.deleteGroup(id);
+    await db.deleteGroup(id);
     console.log(`✓ 分组删除成功`);
   } catch (error) {
     console.error('删除分组失败:', error.message);
@@ -219,7 +219,7 @@ export async function deleteGroup(id) {
 
 export async function exportProfile(name) {
   try {
-    return db.getProfile(name);
+    return await db.getProfile(name);
   } catch (error) {
     console.error(`导出配置失败:`, error.message);
     throw new Error(`导出配置失败: ${error.message}`);
@@ -249,7 +249,7 @@ export async function importProfile(name, config) {
       createdAt: new Date().toISOString()
     };
     
-    db.createProfile(profileData);
+    await db.createProfile(profileData);
     
     console.log(`✓ 配置 "${name}" 导入成功`);
     return profilePath;
@@ -263,7 +263,7 @@ export async function importProfile(name, config) {
 }
 
 export async function batchDeleteProfiles(names) {
-  const results = db.batchDeleteProfiles(names);
+  const results = await db.batchDeleteProfiles(names);
   
   for (const result of results) {
     if (result.success) {

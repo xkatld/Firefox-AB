@@ -1,7 +1,7 @@
-import Database from 'better-sqlite3';
+import initSqlJs from 'sql.js';
 import path from 'path';
 import os from 'os';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
 
 const DB_DIR = path.join(os.homedir(), '.browser-manager');
 const DB_PATH = path.join(DB_DIR, 'data.db');
@@ -10,51 +10,77 @@ if (!existsSync(DB_DIR)) {
   mkdirSync(DB_DIR, { recursive: true });
 }
 
-const db = new Database(DB_PATH);
-db.pragma('journal_mode = WAL');
+let db = null;
+let SQL = null;
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS profiles (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT UNIQUE NOT NULL,
-    browser_type TEXT NOT NULL,
-    enable_fingerprint INTEGER DEFAULT 1,
-    group_id INTEGER,
-    notes TEXT,
-    starred INTEGER DEFAULT 0,
-    proxy_server TEXT,
-    proxy_username TEXT,
-    proxy_password TEXT,
-    start_url TEXT,
-    custom_args TEXT,
-    fingerprint TEXT,
-    created_at TEXT NOT NULL,
-    last_used TEXT,
-    use_count INTEGER DEFAULT 0
-  );
+async function initDatabase() {
+  if (db) return db;
+  
+  SQL = await initSqlJs();
+  
+  if (existsSync(DB_PATH)) {
+    const buffer = readFileSync(DB_PATH);
+    db = new SQL.Database(buffer);
+  } else {
+    db = new SQL.Database();
+  }
+  
+  db.run(`
+    CREATE TABLE IF NOT EXISTS profiles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      browser_type TEXT NOT NULL,
+      enable_fingerprint INTEGER DEFAULT 1,
+      group_id INTEGER,
+      notes TEXT,
+      starred INTEGER DEFAULT 0,
+      proxy_server TEXT,
+      proxy_username TEXT,
+      proxy_password TEXT,
+      start_url TEXT,
+      custom_args TEXT,
+      fingerprint TEXT,
+      created_at TEXT NOT NULL,
+      last_used TEXT,
+      use_count INTEGER DEFAULT 0
+    )
+  `);
+  
+  db.run(`
+    CREATE TABLE IF NOT EXISTS groups (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      color TEXT DEFAULT 'blue',
+      created_at TEXT NOT NULL
+    )
+  `);
+  
+  db.run(`CREATE INDEX IF NOT EXISTS idx_profiles_name ON profiles(name)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_profiles_group_id ON profiles(group_id)`);
+  db.run(`CREATE INDEX IF NOT EXISTS idx_groups_name ON groups(name)`);
+  
+  saveDatabase();
+  
+  return db;
+}
 
-  CREATE TABLE IF NOT EXISTS groups (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT UNIQUE NOT NULL,
-    color TEXT DEFAULT 'blue',
-    created_at TEXT NOT NULL
-  );
+function saveDatabase() {
+  if (!db) return;
+  const data = db.export();
+  const buffer = Buffer.from(data);
+  writeFileSync(DB_PATH, buffer);
+}
 
-  CREATE INDEX IF NOT EXISTS idx_profiles_name ON profiles(name);
-  CREATE INDEX IF NOT EXISTS idx_profiles_group_id ON profiles(group_id);
-  CREATE INDEX IF NOT EXISTS idx_groups_name ON groups(name);
-`);
-
-export function createProfile(profileData) {
-  const stmt = db.prepare(`
+export async function createProfile(profileData) {
+  const database = await initDatabase();
+  
+  database.run(`
     INSERT INTO profiles (
       name, browser_type, enable_fingerprint, group_id, notes, starred,
       proxy_server, proxy_username, proxy_password, start_url, custom_args,
       fingerprint, created_at, last_used, use_count
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
-
-  return stmt.run(
+  `, [
     profileData.name,
     profileData.browserType,
     profileData.enableFingerprint ? 1 : 0,
@@ -70,62 +96,92 @@ export function createProfile(profileData) {
     profileData.createdAt,
     null,
     0
-  );
+  ]);
+  
+  saveDatabase();
 }
 
-export function listProfiles() {
-  const stmt = db.prepare('SELECT * FROM profiles ORDER BY starred DESC, name ASC');
-  const rows = stmt.all();
+export async function listProfiles() {
+  const database = await initDatabase();
   
-  return rows.map(row => ({
-    name: row.name,
-    browserType: row.browser_type,
-    enableFingerprint: row.enable_fingerprint === 1,
-    group: row.group_id ? String(row.group_id) : '',
-    notes: row.notes || '',
-    starred: row.starred === 1,
-    proxy: row.proxy_server ? {
-      server: row.proxy_server,
-      username: row.proxy_username,
-      password: row.proxy_password
-    } : null,
-    startUrl: row.start_url || '',
-    customArgs: row.custom_args || '',
-    fingerprint: row.fingerprint ? JSON.parse(row.fingerprint) : null,
-    createdAt: row.created_at,
-    lastUsed: row.last_used,
-    useCount: row.use_count
-  }));
+  const result = database.exec('SELECT * FROM profiles ORDER BY starred DESC, name ASC');
+  
+  if (!result.length || !result[0].values.length) {
+    return [];
+  }
+  
+  const columns = result[0].columns;
+  const values = result[0].values;
+  
+  return values.map(row => {
+    const obj = {};
+    columns.forEach((col, i) => {
+      obj[col] = row[i];
+    });
+    
+    return {
+      name: obj.name,
+      browserType: obj.browser_type,
+      enableFingerprint: obj.enable_fingerprint === 1,
+      group: obj.group_id ? String(obj.group_id) : '',
+      notes: obj.notes || '',
+      starred: obj.starred === 1,
+      proxy: obj.proxy_server ? {
+        server: obj.proxy_server,
+        username: obj.proxy_username,
+        password: obj.proxy_password
+      } : null,
+      startUrl: obj.start_url || '',
+      customArgs: obj.custom_args || '',
+      fingerprint: obj.fingerprint ? JSON.parse(obj.fingerprint) : null,
+      createdAt: obj.created_at,
+      lastUsed: obj.last_used,
+      useCount: obj.use_count
+    };
+  });
 }
 
-export function getProfile(name) {
-  const stmt = db.prepare('SELECT * FROM profiles WHERE name = ?');
-  const row = stmt.get(name);
+export async function getProfile(name) {
+  const database = await initDatabase();
   
-  if (!row) return null;
+  const result = database.exec('SELECT * FROM profiles WHERE name = ?', [name]);
+  
+  if (!result.length || !result[0].values.length) {
+    return null;
+  }
+  
+  const columns = result[0].columns;
+  const row = result[0].values[0];
+  
+  const obj = {};
+  columns.forEach((col, i) => {
+    obj[col] = row[i];
+  });
   
   return {
-    name: row.name,
-    browserType: row.browser_type,
-    enableFingerprint: row.enable_fingerprint === 1,
-    group: row.group_id ? String(row.group_id) : '',
-    notes: row.notes || '',
-    starred: row.starred === 1,
-    proxy: row.proxy_server ? {
-      server: row.proxy_server,
-      username: row.proxy_username,
-      password: row.proxy_password
+    name: obj.name,
+    browserType: obj.browser_type,
+    enableFingerprint: obj.enable_fingerprint === 1,
+    group: obj.group_id ? String(obj.group_id) : '',
+    notes: obj.notes || '',
+    starred: obj.starred === 1,
+    proxy: obj.proxy_server ? {
+      server: obj.proxy_server,
+      username: obj.proxy_username,
+      password: obj.proxy_password
     } : null,
-    startUrl: row.start_url || '',
-    customArgs: row.custom_args || '',
-    fingerprint: row.fingerprint ? JSON.parse(row.fingerprint) : null,
-    createdAt: row.created_at,
-    lastUsed: row.last_used,
-    useCount: row.use_count
+    startUrl: obj.start_url || '',
+    customArgs: obj.custom_args || '',
+    fingerprint: obj.fingerprint ? JSON.parse(obj.fingerprint) : null,
+    createdAt: obj.created_at,
+    lastUsed: obj.last_used,
+    useCount: obj.use_count
   };
 }
 
-export function updateProfile(name, updates) {
+export async function updateProfile(name, updates) {
+  const database = await initDatabase();
+  
   const fields = [];
   const values = [];
   
@@ -165,52 +221,78 @@ export function updateProfile(name, updates) {
   if (fields.length === 0) return;
   
   values.push(name);
-  const stmt = db.prepare(`UPDATE profiles SET ${fields.join(', ')} WHERE name = ?`);
-  stmt.run(...values);
+  database.run(`UPDATE profiles SET ${fields.join(', ')} WHERE name = ?`, values);
+  saveDatabase();
 }
 
-export function renameProfile(oldName, newName) {
-  const stmt = db.prepare('UPDATE profiles SET name = ? WHERE name = ?');
-  stmt.run(newName, oldName);
+export async function renameProfile(oldName, newName) {
+  const database = await initDatabase();
+  database.run('UPDATE profiles SET name = ? WHERE name = ?', [newName, oldName]);
+  saveDatabase();
 }
 
-export function deleteProfile(name) {
-  const stmt = db.prepare('DELETE FROM profiles WHERE name = ?');
-  stmt.run(name);
+export async function deleteProfile(name) {
+  const database = await initDatabase();
+  database.run('DELETE FROM profiles WHERE name = ?', [name]);
+  saveDatabase();
 }
 
-export function updateProfileUsage(name) {
-  const stmt = db.prepare(`
+export async function updateProfileUsage(name) {
+  const database = await initDatabase();
+  database.run(`
     UPDATE profiles 
     SET last_used = ?, use_count = use_count + 1 
     WHERE name = ?
-  `);
-  stmt.run(new Date().toISOString(), name);
+  `, [new Date().toISOString(), name]);
+  saveDatabase();
 }
 
-export function createGroup(groupData) {
-  const stmt = db.prepare(`
+export async function createGroup(groupData) {
+  const database = await initDatabase();
+  
+  database.run(`
     INSERT INTO groups (name, color, created_at)
     VALUES (?, ?, ?)
-  `);
+  `, [groupData.name, groupData.color, groupData.createdAt]);
   
-  const result = stmt.run(groupData.name, groupData.color, groupData.createdAt);
-  return { id: String(result.lastInsertRowid), ...groupData };
+  saveDatabase();
+  
+  const result = database.exec('SELECT last_insert_rowid() as id');
+  const id = result[0].values[0][0];
+  
+  return { id: String(id), ...groupData };
 }
 
-export function listGroups() {
-  const stmt = db.prepare('SELECT * FROM groups ORDER BY name ASC');
-  const rows = stmt.all();
+export async function listGroups() {
+  const database = await initDatabase();
   
-  return rows.map(row => ({
-    id: String(row.id),
-    name: row.name,
-    color: row.color,
-    createdAt: row.created_at
-  }));
+  const result = database.exec('SELECT * FROM groups ORDER BY name ASC');
+  
+  if (!result.length || !result[0].values.length) {
+    return [];
+  }
+  
+  const columns = result[0].columns;
+  const values = result[0].values;
+  
+  return values.map(row => {
+    const obj = {};
+    columns.forEach((col, i) => {
+      obj[col] = row[i];
+    });
+    
+    return {
+      id: String(obj.id),
+      name: obj.name,
+      color: obj.color,
+      createdAt: obj.created_at
+    };
+  });
 }
 
-export function updateGroup(id, updates) {
+export async function updateGroup(id, updates) {
+  const database = await initDatabase();
+  
   const fields = [];
   const values = [];
   
@@ -226,32 +308,33 @@ export function updateGroup(id, updates) {
   if (fields.length === 0) return;
   
   values.push(parseInt(id));
-  const stmt = db.prepare(`UPDATE groups SET ${fields.join(', ')} WHERE id = ?`);
-  stmt.run(...values);
+  database.run(`UPDATE groups SET ${fields.join(', ')} WHERE id = ?`, values);
+  saveDatabase();
 }
 
-export function deleteGroup(id) {
-  const stmt = db.prepare('UPDATE profiles SET group_id = NULL WHERE group_id = ?');
-  stmt.run(parseInt(id));
+export async function deleteGroup(id) {
+  const database = await initDatabase();
   
-  const deleteStmt = db.prepare('DELETE FROM groups WHERE id = ?');
-  deleteStmt.run(parseInt(id));
+  database.run('UPDATE profiles SET group_id = NULL WHERE group_id = ?', [parseInt(id)]);
+  database.run('DELETE FROM groups WHERE id = ?', [parseInt(id)]);
+  saveDatabase();
 }
 
-export function batchDeleteProfiles(names) {
+export async function batchDeleteProfiles(names) {
+  const database = await initDatabase();
   const results = [];
-  const stmt = db.prepare('DELETE FROM profiles WHERE name = ?');
   
   for (const name of names) {
     try {
-      stmt.run(name);
+      database.run('DELETE FROM profiles WHERE name = ?', [name]);
       results.push({ name, success: true });
     } catch (error) {
       results.push({ name, success: false, error: error.message });
     }
   }
   
+  saveDatabase();
   return results;
 }
 
-export default db;
+export { initDatabase, saveDatabase };
