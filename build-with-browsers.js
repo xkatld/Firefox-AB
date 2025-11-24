@@ -143,12 +143,20 @@ try {
   cpSync(path.join(__dirname, 'node_modules'), path.join(tempDir, 'node_modules'), { recursive: true });
   cpSync(path.join(__dirname, 'package.json'), path.join(tempDir, 'package.json'));
   
+  const nodeExe = isWindows ? 'node.exe' : 'node';
+  const nodeSrcPath = path.join(process.execPath);
+  const nodeDestPath = path.join(tempDir, nodeExe);
+  cpSync(nodeSrcPath, nodeDestPath);
+  console.log(`复制Node.js: ${nodeSrcPath} -> ${nodeDestPath}`);
+  
   const exeName = isWindows ? 'browser-manager.exe' : 'browser-manager';
   const exePath = path.join(unpackedDir, exeName);
   
   console.log('使用caxa打包...');
   
-  execSync(`npx caxa --input "${tempDir}" --output "${exePath}" -- "{{caxa}}/src/cli.js"`, { 
+  const command = `npx caxa --input "${tempDir}" --output "${exePath}" -- "{{caxa}}/${nodeExe}" "{{caxa}}/src/cli.js"`;
+  console.log(`执行命令: ${command}`);
+  execSync(command, { 
     stdio: 'inherit',
     shell: true 
   });
